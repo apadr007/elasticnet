@@ -1,6 +1,6 @@
 ## ref: https://statcompute.wordpress.com/2017/09/03/variable-selection-with-elastic-net/
 
-pkgs <- list("glmnet", "doParallel", "foreach", "PRROC")
+pkgs <- list("glmnet", "doParallel", "foreach", "PRROC", 'caret')
 lapply(pkgs, require, character.only = T)
 
 setwd('~/Desktop/EXP-16/')
@@ -39,7 +39,7 @@ for (i in 5:ncol(T20_classifier_sig) ){
 str(T20_classifier_sig)
 
 # make dummy variables
-set.seed(321)
+#set.seed(11)
 dmy <- dummyVars(" ~ .", data = T20_classifier_sig,fullRank = T)
 train_transformed <- data.frame(predict(dmy, newdata = T20_classifier_sig))
 head(train_transformed)
@@ -55,7 +55,9 @@ trainSet <- train_transformed[ index,]
 testSet <- train_transformed[-index,]
 
 #parameter tuning using caret (for alpha)
-grid<-expand.grid(.alpha=seq(0,1,by=.05),.lambda=seq(0,1,by=.05))
+grid <- expand.grid(.alpha=seq(0.01,1,by=.02),.lambda=seq(0,1,by=.02))
+
+#grid<-expand.grid(.alpha=seq(0,1,by=.05),.lambda=seq(0,1,by=.05))
 custom <- trainControl(method = 'repeatedCV',
                        number = 10, repeats =5,
                        verboseIter = F)
@@ -80,23 +82,26 @@ fitCV <- cv.glmnet(x = as.matrix(testSet[,predictors]), y = testSet[,outcomeName
                    family = 'binomial', type.measure = 'auc', nfolds = 10, 
                    alpha = en$bestTune$alpha )
 
+#fit <- glmnet(x = as.matrix(testSet[,predictors]), y = testSet[,outcomeName], 
+#          family = 'binomial', alpha = en$bestTune$alpha, 
+#          lambda = en$bestTune$lambda )
+
 plot(fitCV)
 fitCV$lambda.1se
 fitCV$lambda.min
 coef(fitCV, s = 'lambda.1se')
 coef(fitCV, s = 'lambda.min')
 
+coef(fit, s = 'lambda.1se')
 # use model on test sample
 predCV <- predict(fitCV, newx = as.matrix(testSet[,predictors]),
                   s = "lambda.1se",
                   type = "response")
 
-actuals <- test$Residency
+actuals <- testSet[,outcomeName]
 
 fg <- predCV[actuals == 1]
 bg <- predCV[actuals == 0]
-fg <- fg[!is.na(fg)]
-bg <- bg[!is.na(bg)]
 
 # ROC Curve
 roc <- roc.curve(scores.class0 = fg, scores.class1 = bg, curve = T)
