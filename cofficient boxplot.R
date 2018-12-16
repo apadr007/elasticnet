@@ -71,6 +71,7 @@ elastic_net_cat <- function(x, probs, lambdaType){
 
 col_size = 100
 results <- matrix(0, nrow = 15, ncol = col_size)
+
 for (i in 1:col_size){
   dat <- elastic_net_cat(T20_classifier, 0.7, 'lambda.1se')
   results[,i] <- dat$coefficients
@@ -111,7 +112,7 @@ barPlotter <- function(x){
   both <- rbind(cos_down, cos_up)
   both$sem <- x$sem[match(both$names, row.names(x) )]
   
-  cols <- colorRampPalette(c("palevioletred",'lightgray' ,"slateblue"))
+  cols <- colorRampPalette(c("slateblue",'lightgray', 'palevioletred'))
   barCenters <- barplot(both$coef, horiz=T, col =cols(nrow(both)),
                         names=both$names, xlim=c(min(both$coef)*1.5, max(both$coef)*1.5), xlab=c('Coefficients') )
   
